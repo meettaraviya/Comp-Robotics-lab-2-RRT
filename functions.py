@@ -84,13 +84,13 @@ def drive_towards(s_start, s_rand, max_time=1):
 	delta2_back = align_heading(h_driving_back, h_target)
 
 	# check with driving direction results in the smallest total rotation
-	backwards = 1
+	drive_direction = 1
 	if (abs(delta1) + abs(delta2)) < (abs(delta1_back) + abs(delta2_back)):
 		delta = [delta1, delta2]
 	else:
 		delta = [delta1_back, delta2_back]
 		h_driving = h_driving_back
-		backwards = -1
+		drive_direction = -1
 
 	# store the rotation times and decrease the remaining time
 	rotate_time1 = angle2time(delta[0])
@@ -107,8 +107,8 @@ def drive_towards(s_start, s_rand, max_time=1):
 	target_dist = np.sqrt( (y_target - y_current)**2 + (x_target - x_current)**2 )
 	dist = target_dist if target_dist < max_dist else max_dist
 
-	x_new = x_current + backwards*dist*np.cos(h_driving)
-	y_new = y_current + backwards*dist*np.sin(h_driving)
+	x_new = x_current + ( drive_direction * dist*np.cos(h_driving) )
+	y_new = y_current + ( drive_direction * dist*np.sin(h_driving) )
 	h_new = h_target
 
 	s_new = (x_new, y_new, h_new)
