@@ -1,27 +1,63 @@
 import numpy as np
+import pygame
+from pygame.locals import *
+
+# C                B       A
+# |----------------========|
+# |                        |
+# |                        |
+# |                   o    | ---> Front when h = 0  
+# |                        |
+# |                        |
+# |----------------========|
+# F                E       D
+# 
+# o = Origin
+
 
 # Function Defintions 
 # map origin: bottom left corner
 # state s = (x, y, h)
 # 	units = (mm, mm, rad)
 
-
 # Global Variables
 map_width = 1000.0  #mm
 map_length = 1000.0  #mm
 
 robot_width = 90.0  #mm
+robot_height = 100.0  #mm
 wheel_radius = 25.0  #mm
 
 max_rpm = 60  # rpm
 robot_circumference = 2*np.pi*(robot_width/2)
 wheel_circumference = 2*np.pi*wheel_radius
 
+point_size = 4
+
+# [A, B, C, D, E, F]
+robot_points = [
+	(+wheel_radius , -robot_width/2 ),
+	(-wheel_radius , -robot_width/2 ),
+	(-(robot_height - wheel_radius) , -robot_width/2 ),
+	(+wheel_radius , +robot_width/2 ),
+	(-wheel_radius , +robot_width/2 ),
+	(-(robot_height - wheel_radius) , +robot_width/2 ),
+]
+
+fps = 30.0
+
 velocity = wheel_circumference * max_rpm * (1/60.0)  # mm/sec = mm/rev * rev/min * min/sec
-angular_speed = velocity * (2*np.pi / robot_circumference)    # rad/sec = mm/sec * rad/mm
+angular_speed = velocity / (robot_width / 2)	# rad/sec = mm/sec * rad/mm
 
 precision = 1e-3
 PI = np.pi
+
+# # oA
+# small_turn_radius = np.sqrt(wheel_radius**2 + (robot_width/2)**2)
+# # oB
+# large_turn_radius = np.sqrt((robot_height - wheel_radius)**2 + (robot_width/2)**2)
+# # directions of A,C,D,F
+# corner_angles = [np.arctan2(*robot_points[0]), np.arctan2(*robot_points[2]), np.arctan2(*robot_points[3]), np.arctan2(*robot_points[5])]
 
 
 # Adrian
@@ -133,13 +169,35 @@ def check_collision(s_start, s_end, action, obstacles):
 
 	# True: there is a collision
 	# False: there is no collision
-	return True/False
+	return False
 
 # Meet
 def check_target(s_start, s_end, action, target):
-	# If the path passes through the target, return a new action
-	# otherwise, return the same original action
-	return True/False, new_action
+	# If the path passes through the target with similar direction as target heading,
+	# return a new action; otherwise, return the same original action
+	tx, ty, th = target
+	r0, m0, r1 = action
+
+	six, siy, sih = s_start
+	sfx, sfy, sfh = s_end
+
+	# dist_si_t = np.sqrt((six-tx)**2+(siy-ty)**2)
+
+	# t_ray = np.atan2(ty-siy, tx-six)
+	sf_ray = np.atan2(sfy-siy, sfx-six)
+
+	dist_si_sf = abs(m0*velocity)
+
+	perp_dist = abs(((sfx-six)*(ty-sfy)-(tx-sfx)*(sfy-siy))/dist_si_sf)
+	if perp_dist < robot_width/2:
+		proj_frac = ((tx-six)*(sfx-six)+(ty-siy)*(sfy-siy))/(dist_si_sf**2)
+		projx = six + proj_frac*(sfx-six)
+		projy = siy + proj_frac*(sfy-siy)
+
+		if (six - projx)*(sfx - projx) < 0 and np.cos(th-sf_ray)>0:
+			return True, (r0, m0*proj_frac, 0)
+
+	return False, action
 
 
 # Yuanyuan
@@ -148,19 +206,152 @@ def display_edge(edge):
 
 
 # Meet
-def print_path(S, E, s_initial, target):
-	return
+def print_path(S, E, s_initial, target, obstacles):
+	visited = {s:False for s in S}
+	prev = {}
+
+	queue = []
+
+	queue.append(s_initial)
+	visited[s_initial] = True
+
+	while queue: 
+
+		# Dequeue a vertex from  
+		# queue and print it 
+		s = queue.pop(0) 
+
+		for u, v, a in E:
+			if u == s and visited[v] == False:
+				queue.append(v)
+				visited[v] = True
+				prev[v] = (u,v,a)
+
+				if v == target:
+					queue = []
+					break
+
+	if v != target:
+		print("No path found yet")
+		return
+
+	u = target
+	state_seq = [target]
+	action_seq = []
+
+	while u != s_initial:
+
+		u, v, a = prev[u]
+		state_seq.append(u)
+		action_seq.append(a)
+
+	action_seq = list(reversed(action_seq))
+	action_seq.append(None)
+
+	state_seq = list(reversed(state_seq))
+
+	print(state_seq)
+	print(action_seq)
+
+	frame_seq = []
+
+	for state, action in zip(state_seq, action_seq):
+
+		if action is None:
+			frame_seq.append(state)
+			break
+
+		r0, m0, r1 = action
+		x, y, h = state
+
+
+		for i in range(round(abs(fps * r0))):
+			frame_seq.append((x, y, h + np.sign(r0) * (angular_speed / fps) * i))
+
+		h_r0 = h + angular_speed * r0
+		
+		dxpf = velocity * np.cos(h_r0) / fps
+		dypf = velocity * np.sin(h_r0) / fps
+
+		for i in range(round(abs(fps * m0))):
+			frame_seq.append((x + i*dxpf, y + np.sign(m0) * i * dypf, h_r0))
+
+		xf = x + velocity * np.cos(h_r0) * m0
+		yf = y + velocity * np.sin(h_r0) * m0
+
+		for i in range(round(abs(fps * r1))):
+			frame_seq.append((xf, yf , h_r0 + np.sign(r1) * (angular_speed / fps) * i))
+
+		h_r1 = h_r0 + angular_speed * r1
+
+	return frame_seq
+
+
+def draw_robot(screen, state):
+	x, y, h = state
+	print(x,y,h)
+	t_points = [
+		(x+p[0]*np.cos(h)-p[1]*np.sin(h), y+p[0]*np.sin(h)+p[1]*np.cos(h)) for p in robot_points
+	]
+	pygame.draw.line(screen, (255,0,0), t_points[0], t_points[2])
+	pygame.draw.line(screen, (255,0,0), t_points[3], t_points[5])
+	pygame.draw.line(screen, (255,0,0), t_points[0], t_points[3])
+	pygame.draw.line(screen, (255,0,0), t_points[2], t_points[5])
+
+	pygame.draw.line(screen, (0,0,255), t_points[0], t_points[1], 3)
+	pygame.draw.line(screen, (0,0,255), t_points[3], t_points[4], 3)
+
+
+
+def play_frames(frames):
+	pygame.init()
+	screen = pygame.display.set_mode((round(map_width), round(map_length)))
+	pygame.display.set_caption('RRT demo')
+
+	# Fill background
+	background = pygame.Surface(screen.get_size())
+	background = background.convert()
+	background.fill((255, 255, 255, 100))
+
+	clock = pygame.time.Clock()
+	clock.tick(round(fps))
+
+	# Display some text
+	font = pygame.font.Font(None, 36)
+	text = font.render("Hello There", 1, (10, 10, 10))
+	textpos = text.get_rect()
+	textpos.centerx = background.get_rect().centerx
+	background.blit(text, textpos)
+
+	# Blit everything to the screen
+	screen.blit(background, (0, 0))
+	pygame.display.flip()
+
+	# Event loop
+	for frame in frame_seq:
+		for event in pygame.event.get():
+			if event.type == QUIT:
+				return
+
+
+		screen.blit(background, (0, 0))
+		pygame.draw.circle(screen, (0,255,0), (round(target[0]), round(target[1])), point_size)
+		draw_robot(screen, frame)
+		pygame.display.flip()
+		clock.tick(round(fps))
+
 
 
 # pseudocode
-def RRT():
+def RRT(s_initial, target, obstacles):
 	S = [s_initial]
 	E = []
-	target = (x_target, y_target, h_target)
-	obstacles = [ (p1, p2, p3, p4) ]
+	# target = (x_target, y_target, h_target)
+	# obstacles = [ (p1, p2, p3, p4) ]
 
 	while(1):
-		s_rand = (x_rand, y_rand, h_rand) 
+
+		s_rand = (np.random.rand()*map_width, np.random.rand()*map_length, np.random.rand()*2*np.pi) 
 
 		s_nearest = nearest_neighbor(S, s_rand)
 
@@ -179,7 +370,8 @@ def RRT():
 				break
 
 
-	print_path(S, E, s_initial, target)
+
+	print_path(S, E, s_initial, target, obstacles)
 
 	return
 
@@ -194,3 +386,58 @@ if __name__ == "__main__":
 	print("Target:", end)
 	print("Final:", state)
 	print("Times:", action)
+
+	# RRT((map_width/2, map_length/2, 0), (3*map_width/4, 3*map_length/4, 0), [])
+
+	# # Initialise screen
+	# pygame.init()
+	# screen = pygame.display.set_mode((round(map_width), round(map_length)))
+	# pygame.display.set_caption('RRT demo')
+
+	# # Fill background
+	# background = pygame.Surface(screen.get_size())
+	# background = background.convert()
+	# background.fill((250, 250, 250))
+
+	# # Display some text
+	# font = pygame.font.Font(None, 36)
+	# text = font.render("Hello There", 1, (10, 10, 10))
+	# textpos = text.get_rect()
+	# textpos.centerx = background.get_rect().centerx
+	# background.blit(text, textpos)
+
+	# # Blit everything to the screen
+	# screen.blit(background, (0, 0))
+	# pygame.display.flip()
+
+	# # Event loop
+	# while 1:
+	# 	for event in pygame.event.get():
+	# 		if event.type == QUIT:
+	# 			exit(0)
+
+	# 	screen.blit(background, (0, 0))
+	# 	pygame.display.flip()
+
+	S = [
+		(500, 500, np.pi/2),
+		(500+50*np.pi, 500, 0),
+		(500+50*np.pi, 500, np.pi/2),
+		(500+50*np.pi, 500+50*np.pi, np.pi/2),
+		(500+50*np.pi, 500, 3*np.pi/2),
+	]
+
+	E = [
+		(S[0], S[1], (-0.45, +1.  ,  0.  )),
+		(S[0], S[2], (-0.45, +1.  ,  0.45)),
+		(S[2], S[3], ( 0.  , +1.  ,  0.  )),
+		(S[2], S[4], ( 0.  ,  0.01, -0.90)),
+	]
+
+	s_initial = S[0]
+	target = S[4]
+
+	obstacles = []
+
+	frame_seq = print_path(S, E, s_initial, target, obstacles)
+	play_frames(frame_seq)
