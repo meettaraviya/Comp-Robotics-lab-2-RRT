@@ -136,7 +136,7 @@ def drive_towards(s_start, s_rand, max_time=1):
 	remaining_time -= rotate_time2
 
 	# determine how far the robot can travel within the remaining time
-	move_time = remaining_time
+	move_time = drive_direction * remaining_time  # move_time < 0 if driving backwards
 	max_dist = velocity * move_time
 
 	# if the robot can reach the target in time, drive there; otherwise, drive max_dist
@@ -380,8 +380,8 @@ def RRT_star():
 
 
 if __name__ == "__main__":
-	start = (0,0,0)
-	end = (1000,0,0)
+	start = (0,0,PI)
+	end = (1000,0,PI)
 	[state, action] = drive_towards(start, end)
 	print("Target:", end)
 	print("Final:", state)
