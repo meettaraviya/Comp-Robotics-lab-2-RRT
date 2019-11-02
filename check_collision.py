@@ -32,15 +32,15 @@ def check_collision(s_start, s_end, action, obstacles):
     bound_4 = Polygon([ (L,-0.1),    (L,W+0.1),    (L+0.1,W+0.1), (L+0.1,-0.1) ])
     print('pass1')
     # First Rotation
-    start_p1_x = (-45)*math.cos(2*math.pi-h_start) - (-75)*math.sin(2*math.pi-h_start) + x_start
-    start_p2_x = (-45)*math.cos(2*math.pi-h_start) - (25)*math.sin(2*math.pi-h_start) + x_start
-    start_p3_x = (45)*math.cos(2*math.pi-h_start) - (25)*math.sin(2*math.pi-h_start) + x_start
-    start_p4_x = (45)*math.cos(2*math.pi-h_start) - (-75)*math.sin(2*math.pi-h_start) + x_start
+    start_p1_x = (-45)*math.cos(1.5*math.pi-h_start) - (-75)*math.sin(1.5*math.pi-h_start) + x_start
+    start_p2_x = (-45)*math.cos(1.5*math.pi-h_start) - (25)*math.sin(1.5*math.pi-h_start) + x_start
+    start_p3_x = (45)*math.cos(1.5*math.pi-h_start) - (25)*math.sin(1.5*math.pi-h_start) + x_start
+    start_p4_x = (45)*math.cos(1.5*math.pi-h_start) - (-75)*math.sin(1.5*math.pi-h_start) + x_start
  
-    start_p1_y = (-45)*math.sin(2*math.pi-h_start) + (-75)*math.cos(2*math.pi-h_start) + y_start
-    start_p2_y = (-45)*math.sin(2*math.pi-h_start) + (25)*math.cos(2*math.pi-h_start) + y_start
-    start_p3_y = (45)*math.sin(2*math.pi-h_start) + (25)*math.cos(2*math.pi-h_start) + y_start
-    start_p4_y = (45)*math.sin(2*math.pi-h_start) + (-75)*math.cos(2*math.pi-h_start) + y_start
+    start_p1_y = (-45)*math.sin(1.5*math.pi-h_start) + (-75)*math.cos(1.5*math.pi-h_start) + y_start
+    start_p2_y = (-45)*math.sin(1.5*math.pi-h_start) + (25)*math.cos(1.5*math.pi-h_start) + y_start
+    start_p3_y = (45)*math.sin(1.5*math.pi-h_start) + (25)*math.cos(1.5*math.pi-h_start) + y_start
+    start_p4_y = (45)*math.sin(1.5*math.pi-h_start) + (-75)*math.cos(1.5*math.pi-h_start) + y_start
     
     a = Polygon([(start_p1_x, start_p1_y), (start_p2_x, start_p2_y), (start_p3_x,start_p3_y), (start_p4_x, start_p4_y)])
     union_a = a
