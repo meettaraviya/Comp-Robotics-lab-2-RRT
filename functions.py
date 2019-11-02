@@ -82,7 +82,15 @@ def check_transition(s1, a, s2):
 
 	s1h__ = s1h_ + r1 * angular_speed
 
-	dist = metric
+	dist = metric(s2, (s1x_, s1y_, s1h__))
+
+	if dist > precision:
+		print(s1)
+		print(a)
+		print(s2)
+		print((s1x_, s1y_, s1h__))
+		print(dist)
+		assert False
 
 
 # #Adrian 		modulo function for -ve numbers
@@ -103,9 +111,14 @@ def metric(s1, s2):
 
 	mh = np.arctan2(s2y-s1y, s2x-s1x)
 
-	t0 = min((s1h - mh) % np.pi, (mh - s1h) % np.pi) / angular_speed
 	t1 = np.sqrt((s2x-s1x)**2+(s2y-s1y)**2) / velocity
-	t2 = min((s2h - mh) % np.pi, (mh - s2h) % np.pi) / angular_speed
+
+	if t1 > precision:
+		t0 = min((s1h - mh) % np.pi, (mh - s1h) % np.pi) / angular_speed
+		t2 = min((s2h - mh) % np.pi, (mh - s2h) % np.pi) / angular_speed
+	else:
+		t0 = min((s1h - s2h) % np.pi, (s2h - s1h) % np.pi) / angular_speed
+		t2 = 0
 
 	return t0 + t1 + t2
 	# result = [(0.0,0.0),(0.0,0.0),(0.0,0.0)]
@@ -485,13 +498,14 @@ def RRT(s_initial, target, obstacles):
 		if check_collision(s_nearest, s_new, action, obstacles):
 			continue
 		else: 
-			found_target, new_action = check_target(s_nearest, s_new, action, target)
+			# found_target, new_action = check_target(s_nearest, s_new, action, target)
 
-			s_new = target if found_target else s_new
+			# s_new = target if found_target else s_new
 			S.append(s_new)
-			E.append( (s_nearest, s_new, new_action) )
+			check_transition(s_nearest, action, s_new)
+			E.append( (s_nearest, s_new, action) )
 
-			display_edge( (s_nearest, s_new, new_action) )
+			display_edge( (s_nearest, s_new, action) )
 
 			if found_target:
 				break
