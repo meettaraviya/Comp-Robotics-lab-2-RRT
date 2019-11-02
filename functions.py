@@ -21,6 +21,11 @@ from pygame.locals import *
 # 	units = (mm, mm, rad)
 
 # Global Variables
+
+
+
+
+
 map_width = 1000.0  #mm
 map_length = 1000.0  #mm
 
@@ -49,6 +54,12 @@ fps = 30.0
 velocity = wheel_circumference * max_rpm * (1/60.0)  # mm/sec = mm/rev * rev/min * min/sec
 angular_speed = velocity / (robot_width / 2)	# rad/sec = mm/sec * rad/mm
 
+######
+
+max_rotation_speed = angular_speed  #radians per sec
+max_translation_speed = velocity    #mm per sec
+
+######
 precision = 1e-3
 PI = np.pi
 
@@ -60,15 +71,150 @@ PI = np.pi
 # corner_angles = [np.arctan2(*robot_points[0]), np.arctan2(*robot_points[2]), np.arctan2(*robot_points[3]), np.arctan2(*robot_points[5])]
 
 
+
+#Adrian 		modulo function for -ve numbers
+def modulo(a,b): 
+    if b == 0: 
+        return -999999
+    if a > 0: 
+        return a%b
+    if a < 0:
+        return -(np.abs(a)%b)
+        
 # Adrian
 def metric(s1, s2):
-	# Use a metric to determine the distance between states s1 and s2
-	return distance
+
+    #include some troubleshooting behavior 
+
+    # Use a metric to determine the distance between states s1 and s2
+
+    result = [(0.0,0.0),(0.0,0.0),(0.0,0.0)]
+    #result = [(time1(+/-), ang1(+/-), ( time2, dist2 (+)), (time3(+/-), rotation3(+/-))] 
+
+    # Rotate translate rotate
+    time = 0.0
+    
+    #Rotate first:
+    
+    #angle of s2 with respect to s1
+    angle_of_s2  = modulo( np.arctan2(s2[1]-s1[1] , s2[0]-s1[0]) ,  (2*np.pi) )#modulo(( np.arctan2(s2[1] , s2[0]) - np.arctan2(s1[1], s1[0])),  (2*np.pi) )
+    
+    print("how much degrees s2 wrt s1 , ",np.degrees(angle_of_s2))
+    #how much rotation needed
+    rot_1 = angle_of_s2  - s1[2]
+    
+    #print(np.degrees(np.arctan2(s1[1],s1[0])))
+    print("prelim rot1", np.degrees(rot_1))
+    
+    
+    if abs(rot_1) < 0.5*np.pi : 
+        pass
+    
+    elif ( abs(rot_1) > 0.5*np.pi and rot_1 < 0):
+        rot_1 = np.pi + rot_1
+        while (abs(rot_1) > 0.5*np.pi):
+            rot_1 = np.pi + rot_1
+            
+    elif ( abs(rot_1) > 0.5*np.pi and rot_1 > 0):
+        rot_1 = -np.pi + rot_1
+        while (abs(rot_1) > 0.5*np.pi):
+            rot_1 = -np.pi + rot_1
+        
+    print("final rot_1 ", np.degrees(rot_1))
+        
+    """
+        #pick the shortest way of turning
+    if( np.abs(rot_1) > 180.0): 
+        rot_1 = 360.0-rot_1
+    """
+    
+    
+    
+    #rotational time
+
+        #need abs value bc +- time exists!
+    time += np.abs(rot_1/max_rotation_speed) 
+
+        #storing time and angular dist
+    result[0] = (rot_1/max_rotation_speed , np.degrees(rot_1))
+    
+    print(result[0] )
+    
+    if (np.abs(rot_1) > 0.5*np.pi): 
+        raise ValueError('you rotated (1) more than 90 deg, not good') 
+
+        
+        
+        
+    #translate:
+    trans = np.abs(math.sqrt( (s1[0]-s2[0])**2 + (s1[1]-s2[1])**2 ) ) 
+
+        #translation time
+    time += np.abs(trans/max_translation_speed) 
+
+    result[1] = (trans/max_translation_speed, trans)
+    
+    
+    
+    
+
+    #rotate
+    
+    rot_2 = (s2[2] - (s1[2] + rot_1))
+    print("rot2", np.degrees(rot_2))
+    
+    
+    
+    if ( np.abs( rot_2) <=  np.pi): 
+           pass
+    elif ( np.abs( rot_2) >  np.pi and rot_2 > 0 ): 
+        rot_2 =  rot_2 - 2*np.pi
+    elif ( np.abs(rot_2) > np.pi and rot_2 < 0): 
+        rot_2 = ( 2*np.pi + rot_2) 
+
+    if (np.abs(rot_2) > np.pi): 
+        raise ValueError('you rotated (2) more than 180 deg, not good') 
+
+    time += np.abs(rot_2/max_rotation_speed) 
+
+    result[2] = (rot_2/max_rotation_speed , np.degrees(rot_2))
+    
+
+
+ #Result -> TROUBLESHOOTING ARRAY, OUTPUT IN DEGREES!
+	
+    #result = [(time1, ang1), ( time2, dist2), (time3, dist3)] 
+    return time, result 
+
+##############################
+# testing input
+s1= (3,0,22.5/180*np.pi)
+s2 = (0,7, 270/180*np.pi)
+time, result = metric(s1,s2)
+print(result)
+##############################
 
 # Adrian
 def nearest_neighbor(S, s_rand):
-	# Use the metric function to determine which state in S is closest to s_rand
-	return s_nearest
+    nearest_node = (S[0], metric(S[0], s_rand))
+
+    for i in S: 
+        if (metric(i,s_rand) < nearest_node[1]):
+            nearest_node =  (i, metric(i, s_rand) )
+
+
+    # Use the metric function to determine which state in S is closest to s_rand
+    return nearest_node[0]
+
+
+
+
+
+
+
+
+
+
 
 
 def angle2time(angle):
