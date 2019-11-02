@@ -32,7 +32,7 @@ max_rpm = 60  # rpm
 robot_circumference = 2*np.pi*(robot_width/2)
 wheel_circumference = 2*np.pi*wheel_radius
 
-point_size = 4
+point_size = 10
 
 # [A, B, C, D, E, F]
 robot_points = [
@@ -336,6 +336,7 @@ def play_frames(frames):
 
 		screen.blit(background, (0, 0))
 		pygame.draw.circle(screen, (0,255,0), (round(target[0]), round(target[1])), point_size)
+		pygame.draw.line(screen, (0,255,0), (round(target[0]), round(target[1])), (round(target[0]+2*point_size*np.cos(target[2])), round(target[1]+2*point_size*np.sin(target[2]))), 4)
 		draw_robot(screen, frame)
 		pygame.display.flip()
 		clock.tick(round(fps))
