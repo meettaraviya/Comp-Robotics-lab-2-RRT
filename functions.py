@@ -22,12 +22,12 @@ import math
 
 # Global Variables
 
-
+np.random.seed(0)
 
 playspeed = 1
 
 map_width = 1000.0  #mm
-map_length = 1000.0  #mm
+map_length = 500.0  #mm
 
 robot_width = 90.0  #mm
 robot_height = 100.0  #mm
@@ -63,16 +63,9 @@ max_translation_speed = velocity    #mm per sec
 precision = 1e-3
 PI = np.pi
 
-# # oA
-# small_turn_radius = np.sqrt(wheel_radius**2 + (robot_width/2)**2)
-# # oB
-# large_turn_radius = np.sqrt((robot_height - wheel_radius)**2 + (robot_width/2)**2)
-# # directions of A,C,D,F
-# corner_angles = [np.arctan2(*robot_points[0]), np.arctan2(*robot_points[2]), np.arctan2(*robot_points[3]), np.arctan2(*robot_points[5])]
-
-def check_transition(s1, a, s2):
+# Meet
+def transition(s1, a):
 	s1x, s1y, s1h = s1
-	s2x, s2y, s2h = s2
 	r0, m0, r1 = a
 
 	s1h_ = s1h + r0 * angular_speed
@@ -82,27 +75,9 @@ def check_transition(s1, a, s2):
 
 	s1h__ = s1h_ + r1 * angular_speed
 
-	dist = metric(s2, (s1x_, s1y_, s1h__))
-
-	if dist > precision:
-		print(s1)
-		print(a)
-		print(s2)
-		print((s1x_, s1y_, s1h__))
-		print(dist)
-		assert False
-
-
-# #Adrian 		modulo function for -ve numbers
-# def modulo(a,b):
-# 	if b == 0: 
-# 		return -999999
-# 	if a > 0: 
-# 		return a%b
-# 	if a < 0:
-# 		return -(np.abs(a)%b)
+	return (s1x_, s1y_, s1h__)
 		
-# Adrian
+# Meet
 def metric(s1, s2):
 	# Use a metric to determine the distance between states s1 and s2
 	#result = [(time1(+/-), ang1(+/-), ( time2, dist2 (+)), (time3(+/-), rotation3(+/-))]
@@ -114,86 +89,13 @@ def metric(s1, s2):
 	t1 = np.sqrt((s2x-s1x)**2+(s2y-s1y)**2) / velocity
 
 	if t1 > precision:
-		t0 = min((s1h - mh) % np.pi, (mh - s1h) % np.pi) / angular_speed
-		t2 = min((s2h - mh) % np.pi, (mh - s2h) % np.pi) / angular_speed
+		t0 = min((s1h - mh) % (2*np.pi), (mh - s1h) % (2*np.pi)) / angular_speed
+		t2 = min((s2h - mh) % (2*np.pi), (mh - s2h) % (2*np.pi)) / angular_speed
 	else:
-		t0 = min((s1h - s2h) % np.pi, (s2h - s1h) % np.pi) / angular_speed
+		t0 = min((s1h - s2h) % (2*np.pi), (s2h - s1h) % (2*np.pi)) / angular_speed
 		t2 = 0
 
 	return t0 + t1 + t2
-	# result = [(0.0,0.0),(0.0,0.0),(0.0,0.0)]
- 
-	# # Rotate translate rotate
-	# time = 0.0
-	
-	# #Rotate first:
-	# 	#angle of s2 with respect to s1
-	# angle_of_s2  = modulo( np.arctan2(s2[1]-s1[1] , s2[0]-s1[0]) ,  (2*np.pi) )#modulo(( np.arctan2(s2[1] , s2[0]) - np.arctan2(s1[1], s1[0])),  (2*np.pi) )
-	
-	# #print("how much degrees s2 wrt s1 , ",np.degrees(angle_of_s2))
-	# #how much rotation needed
-	# rot_1 = angle_of_s2  - s1[2]
-
-	# if abs(rot_1) < 0.5*np.pi : 
-	# 	pass
-	# elif ( abs(rot_1) > 0.5*np.pi and rot_1 < 0):
-	# 	rot_1 = np.pi + rot_1
-	# 	while (abs(rot_1) > 0.5*np.pi):
-	# 		rot_1 = np.pi + rot_1       
-	# elif ( abs(rot_1) > 0.5*np.pi and rot_1 > 0):
-	# 	rot_1 = -np.pi + rot_1
-	# 	while (abs(rot_1) > 0.5*np.pi):
-	# 		rot_1 = -np.pi + rot_1    
-	# #print("final rot_1 ", np.degrees(rot_1))
-
-	# #rotational time
-
-	# 	#need abs value bc +- time exists!
-	# time += abs(rot_1/max_rotation_speed) 
-
-	# 	#storing time and angular dist
-	# result[0] = (rot_1/max_rotation_speed , np.degrees(rot_1))
-	
-	# # print(result[0] )
-	
-	# if (abs(rot_1) > 0.5*np.pi): 
-	# 	raise ValueError('you rotated (1) more than 90 deg, not good') 
- 
-	# #translate:
-	# trans = np.abs(math.sqrt( (s1[0]-s2[0])**2 + (s1[1]-s2[1])**2 ) ) 
-
-	# 	#translation time
-	# time += np.abs(trans/max_translation_speed) 
-	# result[1] = (trans/max_translation_speed, trans)
-	
-	# #rotate
-	# rot_2 = (s2[2] - (s1[2] + rot_1))
-	# #print("rot2", np.degrees(rot_2))
-
-	# if ( np.abs( rot_2) <=  np.pi): 
-	# 	   pass
-	# elif ( np.abs( rot_2) >  np.pi and rot_2 > 0 ): 
-	# 	rot_2 =  rot_2 - 2*np.pi
-	# elif ( np.abs(rot_2) > np.pi and rot_2 < 0): 
-	# 	rot_2 = ( 2*np.pi + rot_2) 
-
-	# if (np.abs(rot_2) > np.pi): 
-	# 	raise ValueError('you rotated (2) more than 180 deg, not good') 
-
-	# time += np.abs(rot_2/max_rotation_speed) 
-	# result[2] = (rot_2/max_rotation_speed , np.degrees(rot_2))
-
- # #Result -> TROUBLESHOOTING ARRAY, OUTPUT IN DEGREES!
-	# #result = [(time1, ang1), ( time2, dist2), (time3, dist3)] 
-	# return time, result 
-
-##############################
-# testing input
-# s1= (3,0,22.5/180*np.pi)
-# s2 = (0,7, 270/180*np.pi)
-# time, result = metric(s1,s2)
-# print(result)
-##############################
 
 # Adrian
 def nearest_neighbor(S, s_rand):
@@ -221,74 +123,52 @@ def align_heading(h_start, h_end):
 		delta = -sign * ( (2*np.pi) - delta )  # rotate opposite direction
 	return delta
 
-# Andrew
+# Meet
 def drive_towards(s_start, s_rand, max_time=1):
-	# Drive from state s_start towards s_rand for max_time seconds
-	x_current = s_start[0]
-	y_current = s_start[1]
-	h_current = s_start[2]
-
-	x_target = s_rand[0]
-	y_target = s_rand[1]
-	h_target = s_rand[2]
-
-	# 1. rotate towards the target
-	# 2. drive towards the target
-	# 3. match the target's heading
-
-	remaining_time = max_time
-
-	# compute the positive angle of a straight line connecting s_start and s_rand
-	h_driving = np.arctan2([y_target - y_current], [x_target - x_current])[0]
-	if h_driving < 0:
-		h_driving += (2*PI)
-
-	# rotate to face target point, taking the shortest path
-	delta1 = align_heading(h_current, h_driving)
 	
-	# consider rotating to setup driving backwards
-	sign = -1 if delta1 < 0 else 1
-	delta1_back = -sign * (PI - abs(delta1))
-	h_driving_back = (h_driving + PI) % (2*PI)
+	sx, sy, sh = s_start
+	tx, ty, th = s_rand
 
-	# compute rotations needed to match the target heading
-	delta2 = align_heading(h_driving, h_target)
-	delta2_back = align_heading(h_driving_back, h_target)
+	lineh = np.arctan2(ty-sy, tx-sx)
 
-	# check with driving direction results in the smallest total rotation
-	drive_direction = 1
-	if (abs(delta1) + abs(delta2)) < (abs(delta1_back) + abs(delta2_back)):
-		delta = [delta1, delta2]
-	else:
-		delta = [delta1_back, delta2_back]
-		h_driving = h_driving_back
-		drive_direction = -1
+	time_left = max_time
 
-	# store the rotation times and decrease the remaining time
-	rotate_time1 = angle2time(delta[0])
-	remaining_time -= abs(rotate_time1)
+	r0o1 = (lineh - sh) % (2*np.pi) # cc-wise
+	r0o2 = (sh - lineh) % (2*np.pi) # c-wise
 
-	rotate_time2 = angle2time(delta[1])
-	remaining_time -= abs(rotate_time2)
+	t0 = r0o1/angular_speed if r0o1 < r0o2 else -r0o2/angular_speed
 
-	# determine how far the robot can travel within the remaining time
-	move_time = drive_direction * remaining_time  # move_time < 0 if driving backwards
-	max_dist = velocity * move_time
+	if abs(t0) >= time_left:
+		t0 = np.sign(t0) * time_left
+		a = (t0, 0, 0)
+		# assert abs(a[0])+abs(a[1])+abs(a[2]) <= max_time
+		return transition(s_start, a), a
 
-	# if the robot can reach the target in time, drive there; otherwise, drive max_dist
-	target_dist = np.sqrt( (y_target - y_current)**2 + (x_target - x_current)**2 )
-	dist = target_dist if target_dist < max_dist else max_dist
+	time_left -= abs(t0)
 
-	x_new = x_current + ( drive_direction * dist*np.cos(h_driving) )
-	y_new = y_current + ( drive_direction * dist*np.sin(h_driving) )
-	h_new = h_target
+	dist = np.sqrt((tx-sx)**2 + (ty-sy)**2)
+	t1 = dist/velocity
 
-	s_new = (x_new, y_new, h_new)
-	action = (rotate_time1, move_time, rotate_time2)
+	if t1 >= time_left:
+		t1 = time_left
+		a = (t0, t1, 0)
+		# assert abs(a[0])+abs(a[1])+abs(a[2]) <= max_time
+		return transition(s_start, a), a
 
-	# action = (rotate_time, move, rotate_time)
-	# 	units = (+/- s) 
-	return s_new, action
+	time_left -= t1
+
+	r2o1 = (th - lineh) % (2*np.pi) # cc-wise
+	r2o2 = (lineh - th) % (2*np.pi) # c-wise
+
+	t2 = r2o1/angular_speed if r2o1 < r2o2 else -r2o2/angular_speed
+
+	if abs(t2) >= time_left:
+		t2 = np.sign(t2) * time_left
+	
+	a = (t0, t1, t2)
+	# assert abs(a[0])+abs(a[1])+abs(a[2]) <= max_time
+	return transition(s_start, a), a
+
 
 
 # Yuanyuan
@@ -336,10 +216,16 @@ def check_target(s_start, s_end, action, target):
 	return False, action
 
 
-# Yuanyuan
-def display_edge(edge):
-	return
+# Meet
+def display_edge(edge, flip=True):
+	pygame.draw.line(screen, (0,0,0), edge[0][:2], edge[1][:2])
+	pygame.draw.circle(screen, (0,0,0), (round(float(edge[0][0])), round(float(edge[0][1]))), round(point_size/2))
+	if flip:
+		pygame.display.flip()
 
+# contains final path
+action_seq = []
+state_seq = []
 
 # Meet
 def print_path(S, E, s_initial, target, obstacles):
@@ -350,6 +236,8 @@ def print_path(S, E, s_initial, target, obstacles):
 
 	queue.append(s_initial)
 	visited[s_initial] = True
+
+	global state_seq, action_seq
 
 	while queue: 
 
@@ -372,8 +260,7 @@ def print_path(S, E, s_initial, target, obstacles):
 		return []
 
 	u = target
-	state_seq = [target]
-	action_seq = []
+	state_seq.append(target)
 
 	while u != s_initial:
 
@@ -383,7 +270,7 @@ def print_path(S, E, s_initial, target, obstacles):
 
 	action_seq = list(reversed(action_seq))
 	action_seq.append(None)
-	print(*action_seq)
+	# print(*action_seq)
 
 	state_seq = list(reversed(state_seq))
 
@@ -441,9 +328,6 @@ def draw_robot(screen, state):
 
 
 def play_frames(frames, target):
-	pygame.init()
-	screen = pygame.display.set_mode((round(map_width), round(map_length)))
-	pygame.display.set_caption('RRT demo')
 
 	# Fill background
 	background = pygame.Surface(screen.get_size())
@@ -464,6 +348,11 @@ def play_frames(frames, target):
 	screen.blit(background, (0, 0))
 	pygame.display.flip()
 
+	L = len(state_seq)
+	edges = []
+	for i in range(L-1):
+		edges.append((state_seq[i], state_seq[i+1]))
+
 	# Event loop
 	for frame in frames:
 		for event in pygame.event.get():
@@ -472,6 +361,10 @@ def play_frames(frames, target):
 
 
 		screen.blit(background, (0, 0))
+
+		for edge in edges:
+			display_edge(edge, flip=False)
+
 		pygame.draw.circle(screen, (0,255,0), (round(target[0]), round(target[1])), point_size)
 		pygame.draw.line(screen, (0,255,0), (round(target[0]), round(target[1])), (round(target[0]+2*point_size*np.cos(target[2])), round(target[1]+2*point_size*np.sin(target[2]))), 4)
 		draw_robot(screen, frame)
@@ -489,6 +382,9 @@ def RRT(s_initial, target, obstacles):
 
 	while(1):
 
+		import time
+		time.sleep(0.1)
+
 		s_rand = (np.random.rand()*map_width, np.random.rand()*map_length, np.random.rand()*2*np.pi) 
 
 		s_nearest = nearest_neighbor(S, s_rand)
@@ -498,16 +394,17 @@ def RRT(s_initial, target, obstacles):
 		if check_collision(s_nearest, s_new, action, obstacles):
 			continue
 		else: 
-			# found_target, new_action = check_target(s_nearest, s_new, action, target)
+			found_target, new_action = check_target(s_nearest, s_new, action, target)
 
-			# s_new = target if found_target else s_new
+			s_new = target if found_target else s_new
 			S.append(s_new)
-			check_transition(s_nearest, action, s_new)
-			E.append( (s_nearest, s_new, action) )
+			# check_transition(s_nearest, action, s_new)
+			E.append( (s_nearest, s_new, new_action) )
 
-			display_edge( (s_nearest, s_new, action) )
+			display_edge( (s_nearest, s_new, new_action) )
 
 			if found_target:
+				time.sleep(2)
 				break
 
 
@@ -523,12 +420,20 @@ def RRT_star():
 
 
 if __name__ == "__main__":
+
 	start = (map_width/2,map_length/2,PI)
 	end = (3*map_width/4,3*map_length/4,PI/2)
-	# [state, action] = drive_towards(start, end)
-	# print("Target:", end)
-	# print("Final:", state)
-	# print("Times:", action)
+
+	
+	pygame.init()
+	screen = pygame.display.set_mode((round(map_width), round(map_length)))
+	pygame.display.set_caption('RRT demo')
+	background = pygame.Surface(screen.get_size())
+	background = background.convert()
+	background.fill((255, 255, 255, 100))
+	screen.blit(background, (0, 0))
+
+	pygame.draw.circle(screen, (0,255,0), (round(end[0]), round(end[1])), point_size)
 
 	RRT(start, end, [])
 
