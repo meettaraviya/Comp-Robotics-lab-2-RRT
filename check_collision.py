@@ -32,15 +32,15 @@ def check_collision(s_start, s_end, action, obstacles):
     bound_4 = Polygon([ (L,-0.1),    (L,W+0.1),    (L+0.1,W+0.1), (L+0.1,-0.1) ])
     print('pass1')
     # First Rotation
-    start_p1_x = (-45)*math.cos(1.5*math.pi-h_start) - (-75)*math.sin(1.5*math.pi-h_start) + x_start
-    start_p2_x = (-45)*math.cos(1.5*math.pi-h_start) - (25)*math.sin(1.5*math.pi-h_start) + x_start
-    start_p3_x = (45)*math.cos(1.5*math.pi-h_start) - (25)*math.sin(1.5*math.pi-h_start) + x_start
-    start_p4_x = (45)*math.cos(1.5*math.pi-h_start) - (-75)*math.sin(1.5*math.pi-h_start) + x_start
+    start_p1_x = (-45)*math.cos(h_start-0.5*math.pi) - (-75)*math.sin(h_start-0.5*math.pi) + x_start
+    start_p2_x = (-45)*math.cos(h_start-0.5*math.pi) - (25)*math.sin(h_start-0.5*math.pi) + x_start
+    start_p3_x = (45)*math.cos(h_start-0.5*math.pi) - (25)*math.sin(h_start-0.5*math.pi) + x_start
+    start_p4_x = (45)*math.cos(h_start-0.5*math.pi) - (-75)*math.sin(h_start-0.5*math.pi) + x_start
  
-    start_p1_y = (-45)*math.sin(1.5*math.pi-h_start) + (-75)*math.cos(1.5*math.pi-h_start) + y_start
-    start_p2_y = (-45)*math.sin(1.5*math.pi-h_start) + (25)*math.cos(1.5*math.pi-h_start) + y_start
-    start_p3_y = (45)*math.sin(1.5*math.pi-h_start) + (25)*math.cos(1.5*math.pi-h_start) + y_start
-    start_p4_y = (45)*math.sin(1.5*math.pi-h_start) + (-75)*math.cos(1.5*math.pi-h_start) + y_start
+    start_p1_y = (-45)*math.sin(h_start-0.5*math.pi) + (-75)*math.cos(h_start-0.5*math.pi) + y_start
+    start_p2_y = (-45)*math.sin(h_start-0.5*math.pi) + (25)*math.cos(h_start-0.5*math.pi) + y_start
+    start_p3_y = (45)*math.sin(h_start-0.5*math.pi) + (25)*math.cos(h_start-0.5*math.pi) + y_start
+    start_p4_y = (45)*math.sin(h_start-0.5*math.pi) + (-75)*math.cos(h_start-0.5*math.pi) + y_start
     
     a = Polygon([(start_p1_x, start_p1_y), (start_p2_x, start_p2_y), (start_p3_x,start_p3_y), (start_p4_x, start_p4_y)])
     union_a = a
@@ -127,8 +127,8 @@ def check_collision(s_start, s_end, action, obstacles):
     
     a = Polygon([(end_p1_x, end_p1_y), (end_p2_x, end_p2_y), (end_p3_x,end_p3_y), (end_p4_x, end_p4_y)])
     union_a = a
-    for angle in np.linspace(0,2*math.pi*action[0],100000):
-        rotated = affinity.rotate(a, angle, origin=(x_start,y_start), use_radians=True)
+    for angle in np.linspace(0,2*math.pi*action[0],1000):
+        rotated = affinity.rotate(a, angle, origin=(x_end,y_end), use_radians=True)
         union_a = union_a.union(rotated)
         
     # check collision with obstacles
