@@ -83,53 +83,33 @@ def modulo(a,b):
         
 # Adrian
 def metric(s1, s2):
-
-    #include some troubleshooting behavior 
-
     # Use a metric to determine the distance between states s1 and s2
-
+    #result = [(time1(+/-), ang1(+/-), ( time2, dist2 (+)), (time3(+/-), rotation3(+/-))]
     result = [(0.0,0.0),(0.0,0.0),(0.0,0.0)]
-    #result = [(time1(+/-), ang1(+/-), ( time2, dist2 (+)), (time3(+/-), rotation3(+/-))] 
-
+ 
     # Rotate translate rotate
     time = 0.0
     
     #Rotate first:
-    
-    #angle of s2 with respect to s1
+    	#angle of s2 with respect to s1
     angle_of_s2  = modulo( np.arctan2(s2[1]-s1[1] , s2[0]-s1[0]) ,  (2*np.pi) )#modulo(( np.arctan2(s2[1] , s2[0]) - np.arctan2(s1[1], s1[0])),  (2*np.pi) )
     
-    print("how much degrees s2 wrt s1 , ",np.degrees(angle_of_s2))
+    #print("how much degrees s2 wrt s1 , ",np.degrees(angle_of_s2))
     #how much rotation needed
     rot_1 = angle_of_s2  - s1[2]
-    
-    #print(np.degrees(np.arctan2(s1[1],s1[0])))
-    print("prelim rot1", np.degrees(rot_1))
-    
-    
+
     if abs(rot_1) < 0.5*np.pi : 
         pass
-    
     elif ( abs(rot_1) > 0.5*np.pi and rot_1 < 0):
         rot_1 = np.pi + rot_1
         while (abs(rot_1) > 0.5*np.pi):
-            rot_1 = np.pi + rot_1
-            
+            rot_1 = np.pi + rot_1       
     elif ( abs(rot_1) > 0.5*np.pi and rot_1 > 0):
         rot_1 = -np.pi + rot_1
         while (abs(rot_1) > 0.5*np.pi):
-            rot_1 = -np.pi + rot_1
-        
-    print("final rot_1 ", np.degrees(rot_1))
-        
-    """
-        #pick the shortest way of turning
-    if( np.abs(rot_1) > 180.0): 
-        rot_1 = 360.0-rot_1
-    """
-    
-    
-    
+            rot_1 = -np.pi + rot_1    
+    #print("final rot_1 ", np.degrees(rot_1))
+
     #rotational time
 
         #need abs value bc +- time exists!
@@ -142,29 +122,18 @@ def metric(s1, s2):
     
     if (np.abs(rot_1) > 0.5*np.pi): 
         raise ValueError('you rotated (1) more than 90 deg, not good') 
-
-        
-        
-        
+ 
     #translate:
     trans = np.abs(math.sqrt( (s1[0]-s2[0])**2 + (s1[1]-s2[1])**2 ) ) 
 
         #translation time
     time += np.abs(trans/max_translation_speed) 
-
     result[1] = (trans/max_translation_speed, trans)
-    
-    
-    
-    
-
+	
     #rotate
-    
     rot_2 = (s2[2] - (s1[2] + rot_1))
-    print("rot2", np.degrees(rot_2))
-    
-    
-    
+    #print("rot2", np.degrees(rot_2))
+
     if ( np.abs( rot_2) <=  np.pi): 
            pass
     elif ( np.abs( rot_2) >  np.pi and rot_2 > 0 ): 
@@ -176,13 +145,9 @@ def metric(s1, s2):
         raise ValueError('you rotated (2) more than 180 deg, not good') 
 
     time += np.abs(rot_2/max_rotation_speed) 
-
     result[2] = (rot_2/max_rotation_speed , np.degrees(rot_2))
-    
-
 
  #Result -> TROUBLESHOOTING ARRAY, OUTPUT IN DEGREES!
-	
     #result = [(time1, ang1), ( time2, dist2), (time3, dist3)] 
     return time, result 
 
@@ -202,19 +167,8 @@ def nearest_neighbor(S, s_rand):
         if (metric(i,s_rand) < nearest_node[1]):
             nearest_node =  (i, metric(i, s_rand) )
 
-
     # Use the metric function to determine which state in S is closest to s_rand
     return nearest_node[0]
-
-
-
-
-
-
-
-
-
-
 
 
 def angle2time(angle):
