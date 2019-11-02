@@ -85,84 +85,94 @@ def check_transition(s1, a, s2):
 	dist = metric
 
 
-#Adrian 		modulo function for -ve numbers
-def modulo(a,b): 
-	if b == 0: 
-		return -999999
-	if a > 0: 
-		return a%b
-	if a < 0:
-		return -(np.abs(a)%b)
+# #Adrian 		modulo function for -ve numbers
+# def modulo(a,b):
+# 	if b == 0: 
+# 		return -999999
+# 	if a > 0: 
+# 		return a%b
+# 	if a < 0:
+# 		return -(np.abs(a)%b)
 		
 # Adrian
 def metric(s1, s2):
 	# Use a metric to determine the distance between states s1 and s2
 	#result = [(time1(+/-), ang1(+/-), ( time2, dist2 (+)), (time3(+/-), rotation3(+/-))]
-	result = [(0.0,0.0),(0.0,0.0),(0.0,0.0)]
+	s1x, s1y, s1h = s1
+	s2x, s2y, s2h = s2
+
+	mh = np.arctan2(s2y-s1y, s2x-s1x)
+
+	t0 = min((s1h - mh) % np.pi, (mh - s1h) % np.pi) / angular_speed
+	t1 = np.sqrt((s2x-s1x)**2+(s2y-s1y)**2) / velocity
+	t2 = min((s2h - mh) % np.pi, (mh - s2h) % np.pi) / angular_speed
+
+	return t0 + t1 + t2
+	# result = [(0.0,0.0),(0.0,0.0),(0.0,0.0)]
  
-	# Rotate translate rotate
-	time = 0.0
+	# # Rotate translate rotate
+	# time = 0.0
 	
-	#Rotate first:
-		#angle of s2 with respect to s1
-	angle_of_s2  = modulo( np.arctan2(s2[1]-s1[1] , s2[0]-s1[0]) ,  (2*np.pi) )#modulo(( np.arctan2(s2[1] , s2[0]) - np.arctan2(s1[1], s1[0])),  (2*np.pi) )
+	# #Rotate first:
+	# 	#angle of s2 with respect to s1
+	# angle_of_s2  = modulo( np.arctan2(s2[1]-s1[1] , s2[0]-s1[0]) ,  (2*np.pi) )#modulo(( np.arctan2(s2[1] , s2[0]) - np.arctan2(s1[1], s1[0])),  (2*np.pi) )
 	
-	#print("how much degrees s2 wrt s1 , ",np.degrees(angle_of_s2))
-	#how much rotation needed
-	rot_1 = angle_of_s2  - s1[2]
+	# #print("how much degrees s2 wrt s1 , ",np.degrees(angle_of_s2))
+	# #how much rotation needed
+	# rot_1 = angle_of_s2  - s1[2]
 
-	if abs(rot_1) < 0.5*np.pi : 
-		pass
-	elif ( abs(rot_1) > 0.5*np.pi and rot_1 < 0):
-		rot_1 = np.pi + rot_1
-		while (abs(rot_1) > 0.5*np.pi):
-			rot_1 = np.pi + rot_1       
-	elif ( abs(rot_1) > 0.5*np.pi and rot_1 > 0):
-		rot_1 = -np.pi + rot_1
-		while (abs(rot_1) > 0.5*np.pi):
-			rot_1 = -np.pi + rot_1    
-	#print("final rot_1 ", np.degrees(rot_1))
+	# if abs(rot_1) < 0.5*np.pi : 
+	# 	pass
+	# elif ( abs(rot_1) > 0.5*np.pi and rot_1 < 0):
+	# 	rot_1 = np.pi + rot_1
+	# 	while (abs(rot_1) > 0.5*np.pi):
+	# 		rot_1 = np.pi + rot_1       
+	# elif ( abs(rot_1) > 0.5*np.pi and rot_1 > 0):
+	# 	rot_1 = -np.pi + rot_1
+	# 	while (abs(rot_1) > 0.5*np.pi):
+	# 		rot_1 = -np.pi + rot_1    
+	# #print("final rot_1 ", np.degrees(rot_1))
 
-	#rotational time
+	# #rotational time
 
-		#need abs value bc +- time exists!
-	time += abs(rot_1/max_rotation_speed) 
+	# 	#need abs value bc +- time exists!
+	# time += abs(rot_1/max_rotation_speed) 
 
-		#storing time and angular dist
-	result[0] = (rot_1/max_rotation_speed , np.degrees(rot_1))
+	# 	#storing time and angular dist
+	# result[0] = (rot_1/max_rotation_speed , np.degrees(rot_1))
 	
-	# print(result[0] )
+	# # print(result[0] )
 	
-	if (abs(rot_1) > 0.5*np.pi): 
-		raise ValueError('you rotated (1) more than 90 deg, not good') 
+	# if (abs(rot_1) > 0.5*np.pi): 
+	# 	raise ValueError('you rotated (1) more than 90 deg, not good') 
  
-	#translate:
-	trans = np.abs(math.sqrt( (s1[0]-s2[0])**2 + (s1[1]-s2[1])**2 ) ) 
+	# #translate:
+	# trans = np.abs(math.sqrt( (s1[0]-s2[0])**2 + (s1[1]-s2[1])**2 ) ) 
 
-		#translation time
-	time += np.abs(trans/max_translation_speed) 
-	result[1] = (trans/max_translation_speed, trans)
+	# 	#translation time
+	# time += np.abs(trans/max_translation_speed) 
+	# result[1] = (trans/max_translation_speed, trans)
 	
-	#rotate
-	rot_2 = (s2[2] - (s1[2] + rot_1))
-	#print("rot2", np.degrees(rot_2))
+	# #rotate
+	# rot_2 = (s2[2] - (s1[2] + rot_1))
+	# #print("rot2", np.degrees(rot_2))
 
-	if ( np.abs( rot_2) <=  np.pi): 
-		   pass
-	elif ( np.abs( rot_2) >  np.pi and rot_2 > 0 ): 
-		rot_2 =  rot_2 - 2*np.pi
-	elif ( np.abs(rot_2) > np.pi and rot_2 < 0): 
-		rot_2 = ( 2*np.pi + rot_2) 
+	# if ( np.abs( rot_2) <=  np.pi): 
+	# 	   pass
+	# elif ( np.abs( rot_2) >  np.pi and rot_2 > 0 ): 
+	# 	rot_2 =  rot_2 - 2*np.pi
+	# elif ( np.abs(rot_2) > np.pi and rot_2 < 0): 
+	# 	rot_2 = ( 2*np.pi + rot_2) 
 
-	if (np.abs(rot_2) > np.pi): 
-		raise ValueError('you rotated (2) more than 180 deg, not good') 
+	# if (np.abs(rot_2) > np.pi): 
+	# 	raise ValueError('you rotated (2) more than 180 deg, not good') 
 
-	time += np.abs(rot_2/max_rotation_speed) 
-	result[2] = (rot_2/max_rotation_speed , np.degrees(rot_2))
+	# time += np.abs(rot_2/max_rotation_speed) 
+	# result[2] = (rot_2/max_rotation_speed , np.degrees(rot_2))
 
- #Result -> TROUBLESHOOTING ARRAY, OUTPUT IN DEGREES!
-	#result = [(time1, ang1), ( time2, dist2), (time3, dist3)] 
-	return time, result 
+ # #Result -> TROUBLESHOOTING ARRAY, OUTPUT IN DEGREES!
+	# #result = [(time1, ang1), ( time2, dist2), (time3, dist3)] 
+	# return time, result 
 
 ##############################
 # testing input
@@ -490,7 +500,7 @@ def RRT(s_initial, target, obstacles):
 
 	frames = print_path(S, E, s_initial, target, obstacles)
 	# print(s_initial)
-	# play_frames(frames, target)
+	play_frames(frames, target)
 
 	return
 
