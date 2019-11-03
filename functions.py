@@ -66,7 +66,7 @@ max_translation_speed = velocity    #mm per sec
 precision = 1e-3
 PI = np.pi
 
-
+# Yuanyuan, Meet
 def check_collision(s_start, s_end, action, obstacles):
 	# Given a straight line path from state s_start to state s_end, check if the path intersects with any obstacles
 	# Also check if rotations result in collisions with obstacles
@@ -93,7 +93,7 @@ def check_collision(s_start, s_end, action, obstacles):
 	L = map_width
 	W = map_length
 
-	radius = math.sqrt(34)*15
+	radius = math.sqrt((robot_height - wheel_radius)**2 + (robot_width/2)**2)
 	bound_1 = Polygon([ (-0.1,-0.1), (-0.1,0),     (L+0.1,0),     (L+0.1,-0.1) ])
 	bound_2 = Polygon([ (-0.1,W),    (-0.1,W+0.1), (L+0.1,W+0.1), (L+0.1,W)    ])
 	bound_3 = Polygon([ (-0.1,-0.1), (-0.1,W+0.1), (0,W+0.1),     (0,-0.1)     ])
@@ -519,26 +519,26 @@ def RRT_star():
 if __name__ == "__main__":
 
 	# case 1
-	# start = (map_width/2,map_length/2,PI)
-	# end = (3*map_width/4,3*map_length/4,PI/2)
-	# obstacles = [ 
-	# 	(
-	# 		(0.6*map_width,0.4*map_length),
-	# 		(0.6*map_width,0.6*map_length),
-	# 		(0.65*map_width,0.6*map_length),
-	# 		(0.65*map_width,0.4*map_length)
-	# 		)
-	# 	]
+	start = (map_width/2,map_length/2,PI)
+	end = (3*map_width/4,3*map_length/4,PI/2)
+	obstacles = [ 
+		(
+			(0.6*map_width,0.4*map_length),
+			(0.6*map_width,0.6*map_length),
+			(0.65*map_width,0.6*map_length),
+			(0.65*map_width,0.4*map_length)
+			)
+		]
 
 	# case 2
-	c1 = [(0,150),(1000,150),(1000,0),(0,0)]
-	c2 = [(0,500),(1000,500),(1000,300),(0,300)]
-	c3 = [(100,300),(200,300),(200,250),(100,250)]
-	c4 = [(400,250),(500,250),(500,150), (400,150)]
-	c5 = [(700,300),(800,300),(800,250),(700,250)]
-	obstacles = [c1,c2,c3,c4,c5]
-	start = (50,225,0)
-	end = (900,225,0)
+	# c1 = [(0,150),(1000,150),(1000,0),(0,0)]
+	# c2 = [(0,500),(1000,500),(1000,300),(0,300)]
+	# c3 = [(100,300),(200,300),(200,250),(100,250)]
+	# c4 = [(400,250),(500,250),(500,150), (400,150)]
+	# c5 = [(700,300),(800,300),(800,250),(700,250)]
+	# obstacles = [c1,c2,c3,c4,c5]
+	# start = (50,225,0)
+	# end = (900,225,0)
 
 	# case 3
 	# c1 = [(200,150),(300,150),(300,0),(200,0)]
