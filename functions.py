@@ -300,6 +300,12 @@ def check_target(s_start, s_end, action, target):
 def display_edge(edge, flip=True, color=(0,0,0)):
 	pygame.draw.line(screen, color, edge[0][:2], edge[1][:2])
 	pygame.draw.circle(screen, color, (round(float(edge[1][0])), round(float(edge[1][1]))), round(point_size/2))
+	
+	h = edge[1][2]
+	nx = edge[1][0] + np.cos(h)*point_size
+	ny = edge[1][1] + np.sin(h)*point_size
+	pygame.draw.line(screen, color, (round(nx), round(ny)), (round(edge[1][0]), round(edge[1][1])), 2)
+	
 	if flip:
 		pygame.display.flip()
 
@@ -310,6 +316,7 @@ state_seq = []
 
 def draw_obstacles(obstacles):
 
+	pygame.draw.rect(screen, (0,0,0), screen.get_rect(), 1)
 	for obstacle in obstacles:
 		pygame.draw.polygon(screen, (0,0,255), obstacle)
 
@@ -461,21 +468,13 @@ def play_frames(frames, target, obstacles):
 
 
 
-# pseudocode
 def RRT(s_initial, target, obstacles):
 	S = [s_initial]
 	E = []
 	# target = (x_target, y_target, h_target)
-	obstacles = [ 
-		(
-			(0.6*map_width,0.3*map_length),
-			(0.6*map_width,0.7*map_length),
-			(0.65*map_width,0.7*map_length),
-			(0.65*map_width,0.3*map_length)
-			)
-		]
 
 	draw_obstacles(obstacles)
+	draw_robot(screen, s_initial)
 
 	while(1):
 
@@ -505,7 +504,7 @@ def RRT(s_initial, target, obstacles):
 				time.sleep(2)
 				break
 
-
+	pygame.image.save(screen, input("File name for saving calculated tree:"))
 
 	frames = print_path(S, E, s_initial, target, obstacles)
 	# print(s_initial)
@@ -519,8 +518,39 @@ def RRT_star():
 
 if __name__ == "__main__":
 
-	start = (map_width/2,map_length/2,PI)
-	end = (3*map_width/4,3*map_length/4,PI/2)
+	# case 1
+	# start = (map_width/2,map_length/2,PI)
+	# end = (3*map_width/4,3*map_length/4,PI/2)
+	# obstacles = [ 
+	# 	(
+	# 		(0.6*map_width,0.4*map_length),
+	# 		(0.6*map_width,0.6*map_length),
+	# 		(0.65*map_width,0.6*map_length),
+	# 		(0.65*map_width,0.4*map_length)
+	# 		)
+	# 	]
+
+	# case 2
+	c1 = [(0,150),(1000,150),(1000,0),(0,0)]
+	c2 = [(0,500),(1000,500),(1000,300),(0,300)]
+	c3 = [(100,300),(200,300),(200,250),(100,250)]
+	c4 = [(400,250),(500,250),(500,150), (400,150)]
+	c5 = [(700,300),(800,300),(800,250),(700,250)]
+	obstacles = [c1,c2,c3,c4,c5]
+	start = (50,225,0)
+	end = (900,225,0)
+
+	# case 3
+	# c1 = [(200,150),(300,150),(300,0),(200,0)]
+	# c2 = [(500,350),(800,350),(800,250),(500,250)]
+	# c3 = [(750,150),(900,150),(900,0),(750,0)]
+	# obstacles = [c1, c2, c3]
+
+	# start = (100,250,3*np.pi/2)
+	# end = (900,450,0)
+
+	# end = (700,50,0)
+	# end = (350,50,0)
 
 	
 	pygame.init()
@@ -532,28 +562,8 @@ if __name__ == "__main__":
 	screen.blit(background, (0, 0))
 
 	pygame.draw.circle(screen, (0,255,0), (round(end[0]), round(end[1])), point_size)
+	pygame.draw.line(screen, (0,255,0), (round(end[0]), round(end[1])), (round(end[0]+2*point_size*np.cos(end[2])), round(end[1]+2*point_size*np.sin(end[2]))), 4)
 
-	RRT(start, end, [])
 
-	S = [
-		(500, 500, np.pi/2),
-		(500+50*np.pi, 500, 0),
-		(500+50*np.pi, 500, np.pi/2),
-		(500+50*np.pi, 500+50*np.pi, np.pi/2),
-		(500+50*np.pi, 500, 3*np.pi/2),
-	]
+	RRT(start, end, obstacles)
 
-	E = [
-		(S[0], S[1], (-0.45, +1.  ,  0.  )),
-		(S[0], S[2], (-0.45, +1.  ,  0.45)),
-		(S[2], S[3], ( 0.  , +1.  ,  0.  )),
-		(S[2], S[4], ( 0.  ,  0.01, -0.90)),
-	]
-
-	s_initial = S[0]
-	target = S[4]
-
-	obstacles = []
-
-	# frame_seq = print_path(S, E, s_initial, target, obstacles)
-	# play_frames(frame_seq)
