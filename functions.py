@@ -82,7 +82,7 @@ def check_collision(s_start, s_end, action, obstacles):
 	# False: there is no collision
 	
 	
-		x_start = s_start[0]
+	x_start = s_start[0]
 	y_start = s_start[1]
 	h_start = s_start[2]
 
