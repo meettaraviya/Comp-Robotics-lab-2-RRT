@@ -469,7 +469,10 @@ def print_path(S, E, s_initial, target, obstacles):
 		action_seq.append(a)
 
 	action_seq = list(reversed(action_seq))
+	total_time = sum([sum(map(abs, action)) for action in action_seq])
 	action_seq.append(None)
+
+	print("Total time from start to end:", total_time)
 	# print(*action_seq)
 
 	state_seq = list(reversed(state_seq))
@@ -574,6 +577,146 @@ def play_frames(frames, target, obstacles):
 		clock.tick(round(fps * playspeed))
 
 
+# Meet
+def display_edges(E):
+	for edge in E:
+		display_edge(edge)
+
+
+cost = {}
+parent = {}
+to_action = {}
+
+nrbr_radius = 3.0
+
+# Meet
+def least_cost_neighbor(S, s_rand, obstacles):
+	# nn0 = nearest_neighbor(S, s_rand)
+	nearest_node = (None, 1e5)
+
+	for i in S:
+		if (metric(i,s_rand)+cost[i] < nearest_node[1]):
+			_, action = drive_towards(i, s_rand, max_time=1e5)
+			if not check_collision(i, s_rand, action, obstacles):
+				nearest_node =  (i, metric(i, s_rand)+cost[i] )
+
+	# Use the metric function to determine which state in S is closest to s_rand
+	return nearest_node[0] if nearest_node[0] else nearest_neighbor(S, s_rand)
+
+
+def rewire_tree(s_new, obstacles):
+	S = parent.keys()
+	root = list(S)[0]
+	new_children = []
+	for s in S:
+		dist = metric(s, s_new)
+		if dist < nrbr_radius:
+			if cost[s_new]+dist < cost[s]:
+				_, action = drive_towards(s_new, s)
+				if not check_collision(s_new, s, action, obstacles):
+					new_children.append(s)
+					to_action[s] = action
+
+	for c in new_children:
+		parent[c] = s_new
+
+	children = {s:[] for s in S}
+	for k,v in parent.items():
+		if v:
+			children[v].append(k)
+
+	cqueue = []
+
+	cqueue.append(root)
+
+	while cqueue:
+		par = cqueue.pop(0)
+		cqueue.extend(children[par])
+
+		if parent[par]:
+			pp = parent[par]
+			cost[par] = cost[pp] + metric(pp, par)
+
+	# for 
+
+def display_tree():
+	for k, v in parent.items():
+		if v:
+			display_edge((v, k, to_action[k]))
+
+# Adrian, Meet
+def RRT_star(s_initial, target, obstacles):
+	S = [s_initial]
+	cost[s_initial] = 0
+	parent[s_initial] = None
+	to_action[s_initial] = None
+	# target = (x_target, y_target, h_target)
+
+	draw_obstacles(obstacles)
+	draw_robot(screen, s_initial)
+
+	n_iter = 0
+
+	while(1):
+
+		n_iter += 1
+
+		import time
+		pygame.display.flip()
+		time.sleep(0.05)
+		screen.blit(background, (0, 0))
+		pygame.draw.circle(screen, (0,255,0), (round(target[0]), round(target[1])), point_size)
+		pygame.draw.line(screen, (0,255,0), (round(target[0]), round(target[1])), (round(target[0]+2*point_size*np.cos(target[2])), round(target[1]+2*point_size*np.sin(target[2]))), 4)
+
+		s_rand = (np.random.rand()*map_width, np.random.rand()*map_length, np.random.rand()*2*np.pi) 
+
+		s_nearest = least_cost_neighbor(S, s_rand, obstacles)
+
+		s_new, action = drive_towards(s_nearest, s_rand)
+		draw_obstacles(obstacles)
+		display_tree()
+
+		if check_collision(s_nearest, s_new, action, obstacles):
+			display_edge( (s_nearest, s_new, action), color=(255,0,0), flip=True)
+		else:
+			# par = least_cost_neighbor(S, s_new)
+			found_target, new_action = check_target(s_nearest, s_new, action, target)
+
+			if found_target:
+				new_action = drive_towards(s_nearest, s_new)[1]
+
+			s_new = target if found_target else s_new
+
+			par = s_nearest
+			cost[s_new] = cost[par] + sum(map(abs, action))
+			parent[s_new] = par
+			to_action[s_new] = action
+			
+
+			S.append(s_new)
+			rewire_tree(s_new, obstacles)
+			# check_transition(s_nearest, action, s_new)
+
+
+			if found_target:
+				display_tree()
+				pygame.display.flip()
+				time.sleep(2)
+				break
+
+	print("Number of iterations of RRT*:", n_iter)
+	pygame.image.save(screen, input("File name for saving calculated tree: "))
+	E = []
+
+	for k, v in parent.items():
+		if v:
+			E.append((v, k, to_action[k]))
+	frames = print_path(parent.keys(), E, s_initial, target, obstacles)
+	# print(s_initial)
+	play_frames(frames, target, obstacles)
+
+	return
+
 
 def RRT(s_initial, target, obstacles):
 	S = [s_initial]
@@ -583,10 +726,14 @@ def RRT(s_initial, target, obstacles):
 	draw_obstacles(obstacles)
 	draw_robot(screen, s_initial)
 
+	n_iter = 0
+
 	while(1):
 
+		n_iter += 1
+
 		import time
-		time.sleep(0.1)
+		time.sleep(0.05)
 
 		s_rand = (np.random.rand()*map_width, np.random.rand()*map_length, np.random.rand()*2*np.pi) 
 
@@ -601,6 +748,8 @@ def RRT(s_initial, target, obstacles):
 			found_target, new_action = check_target(s_nearest, s_new, action, target)
 
 			s_new = target if found_target else s_new
+			if found_target:
+				new_action = drive_towards(s_nearest, s_new)[1]
 			S.append(s_new)
 			# check_transition(s_nearest, action, s_new)
 			E.append( (s_nearest, s_new, new_action) )
@@ -611,15 +760,14 @@ def RRT(s_initial, target, obstacles):
 				time.sleep(2)
 				break
 
-	pygame.image.save(screen, input("File name for saving calculated tree:"))
+	print("Number of iterations of RRT:", n_iter)
+	pygame.image.save(screen, input("File name for saving calculated tree: "))
+
 
 	frames = print_path(S, E, s_initial, target, obstacles)
 	# print(s_initial)
 	play_frames(frames, target, obstacles)
 
-	return
-
-def RRT_star():
 	return
 
 
@@ -680,4 +828,9 @@ if __name__ == "__main__":
 
 
 	RRT(start, end, obstacles)
+	np.random.seed(0)
+	state_seq = []
+	action_seq = []
+	pygame.display.set_caption('RRT* demo')
+	RRT_star(start, end, obstacles)
 
