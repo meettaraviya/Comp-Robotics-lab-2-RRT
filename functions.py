@@ -66,6 +66,57 @@ max_translation_speed = velocity    #mm per sec
 precision = 1e-3
 PI = np.pi
 
+
+r_s = np.sqrt((robot_width/2)**2+(wheel_radius)**2)
+r_b = np.sqrt((robot_width/2)**2+(robot_height - wheel_radius)**2)
+theta_s = np.arctan2(robot_width/2, wheel_radius)
+theta_b = np.arctan2(robot_width/2, robot_height - wheel_radius)
+
+# Meet
+def segment_arc_intersect(p1, p2, o, r, h1, h2):
+
+	h = np.arctan2(p2[1]-p1[1],p2[0]-p1[0])
+
+	dist_p1_p2 = np.sqrt((p1[0]-p2[0])**2+(p1[1]-p2[1])**2)
+	dist_p1_c = np.sqrt((p1[0]-o[0])**2+(p1[1]-o[1])**2)
+
+	a = 1
+	b = 2*(p1[0]-o[0])*np.cos(h)+2*(p1[1]-o[1])*np.sin(h)
+	c = dist_p1_c**2 - r**2
+
+	if b**2 >= 4*a*c:
+		r1 = (-b+np.sqrt(b**2-4*a*c))/(2*a)
+		r2 = (-b+np.sqrt(b**2-4*a*c))/(2*a)
+
+		if 0 <= r1 <= dist_p1_p2:
+
+			pnx = p1[0] + r1*np.cos(h)
+			pny = p1[1] + r1*np.sin(h)
+
+			pnh = np.arctan2(pny-o[1], pnx-o[0])
+
+			pnhr = (pnh - h1) % (2*np.pi)
+			h2r = (h2 - h1) % (2*np.pi)
+
+			if pnhr <= h2r:
+				return True
+
+		if 0 <= r2 <= dist_p1_p2:
+
+			pnx = p1[0] + r2*np.cos(h)
+			pny = p1[1] + r2*np.sin(h)
+
+			pnh = np.arctan2(pny-o[1], pnx-o[0])
+
+			pnhr = (pnh - h1) % (2*np.pi)
+			h2r = (h2 - h1) % (2*np.pi)
+
+			if pnhr <= h2r:
+				return True
+	
+	return False
+
+
 # Yuanyuan, Meet
 def check_collision(s_start, s_end, action, obstacles):
 	# Given a straight line path from state s_start to state s_end, check if the path intersects with any obstacles
@@ -101,7 +152,7 @@ def check_collision(s_start, s_end, action, obstacles):
 
   
 	# First Rotation
-	a_rot1 = Point(x_start, y_start).buffer(radius)
+	# a_rot1 = Point(x_start, y_start).buffer(radius)
 	
 	# straight line with obstacles
 	if (x_end - y_start) == 0.0:
@@ -138,24 +189,80 @@ def check_collision(s_start, s_end, action, obstacles):
 	a_straight = Polygon([(point1_x, point1_y), (point2_x, point2_y), (point3_x,point3_y), (point4_x, point4_y)])
 	   
 	# Second Rotation
-	a_rot2 = Point(x_end,y_end).buffer(radius)
+	# a_rot2 = Point(x_end,y_end).buffer(radius)
     
-	a_tot = a_straight.union(a_rot2)
-	a_tot = a_tot.union(a_rot1)
+	# a_tot = a_straight.union(a_rot2)
+	# a_tot = a_tot.union(a_rot1)
+
+
 	# check collision with obstacles
 	for obstacle in obstacles:
 		b = Polygon(obstacle)
-		if a_tot.intersection(b).area > 0:
+		if a_straight.intersection(b).area > 0:
 			return True
 	# check collision with boundaries
-	if a_tot.intersection(bound_1).area > 0:
+	if a_straight.intersection(bound_1).area > 0:
 		return True
-	if a_tot.intersection(bound_2).area > 0:
+	if a_straight.intersection(bound_2).area > 0:
 		return True
-	if a_tot.intersection(bound_3).area > 0:
+	if a_straight.intersection(bound_3).area > 0:
 		return True
-	if a_tot.intersection(bound_4).area > 0:
+	if a_straight.intersection(bound_4).area > 0:
 		return True
+
+	h_mid = np.arctan2(y_end - y_start, x_end - x_start)
+
+	if (h_start - h_mid) % (2*np.pi) < np.pi:
+		h1i = h_mid
+		h2i = h_start
+	else:
+		h1i = h_start
+		h2i = h_mid
+
+	if (h_end - h_mid) % (2*np.pi) < np.pi:
+		h1f = h_mid
+		h2f = h_end
+	else:
+		h1f = h_end
+		h2f = h_mid
+
+	oi = (x_start, y_start)
+	of = (x_end, y_end)
+
+	arcs = [
+		(oi, r_s, h1i + theta_s, h2i + theta_s),
+		(oi, r_s, h1i - theta_s, h2i - theta_s),
+		(oi, r_b, h1i + theta_b + np.pi, h2i + theta_b + np.pi),
+		(oi, r_b, h1i - theta_b + np.pi, h2i - theta_b + np.pi),
+		(of, r_s, h1f + theta_s, h2f + theta_s),
+		(of, r_s, h1f - theta_s, h2f - theta_s),
+		(of, r_b, h1f + theta_b + np.pi, h2f + theta_b + np.pi),
+		(of, r_b, h1f - theta_b + np.pi, h2f - theta_b + np.pi),
+	]
+
+	centred_arcs = []
+
+	for p1,p2,p3,p4 in obstacles:
+		for arc in arcs:
+			if segment_arc_intersect(p1, p2, *arc):
+				return True
+			if segment_arc_intersect(p2, p3, *arc):
+				return True
+			if segment_arc_intersect(p3, p4, *arc):
+				return True
+			if segment_arc_intersect(p4, p1, *arc):
+				return True
+
+
+	for arc in arcs:
+		if segment_arc_intersect((0,0), (L,0), *arc):
+			return True
+		if segment_arc_intersect((L,0), (L,W), *arc):
+			return True
+		if segment_arc_intersect((L,W), (0,W), *arc):
+			return True
+		if segment_arc_intersect((0,W), (0,0), *arc):
+			return True
 
 	return False
 
