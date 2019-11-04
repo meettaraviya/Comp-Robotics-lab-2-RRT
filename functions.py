@@ -810,7 +810,6 @@ if __name__ == "__main__":
 	# 	]
 	# print()
 	# print("case 1 relative computational cost")
-	# RRT(start, end, obstacles)
 
 	# case 2
 	# c1 = [(0,150),(1000,150),(1000,0),(0,0)]
@@ -824,7 +823,6 @@ if __name__ == "__main__":
 	
 	# print()
 	# print("case 2 relative computational cost")
-	# RRT(start, end, obstacles)
 
 	# case 3
 	# c1 = [(200,150),(300,150),(300,0),(200,0)]
@@ -839,7 +837,6 @@ if __name__ == "__main__":
 	# end = (350,50,0)
 	# print()
 	# print("case 3 relative computational cost")
-	# RRT(start, end, obstacles)
 
 	# case 4
 	c1 = [ (281.6759236105702, 246.8823493019557), (332.0566913037167, 332.4124898042745),  (462.1093706976528, 290.2332424332679),  (359.0045437907485, 140.2625851141338)]
@@ -851,7 +848,6 @@ if __name__ == "__main__":
 	
 	# print()
 	# print("case 4 relative computational cost")
-	# RRT(start, end, obstacles)
 	
 	pygame.init()
 	screen = pygame.display.set_mode((round(map_width), round(map_length)))
