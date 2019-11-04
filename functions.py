@@ -5,6 +5,7 @@ import math
 import shapely
 from shapely.geometry import Polygon
 from shapely.geometry import Point
+#import timeit
 # C                B       A
 # |----------------========|
 # |                        |
@@ -727,7 +728,12 @@ def RRT(s_initial, target, obstacles):
 	draw_robot(screen, s_initial)
 
 	n_iter = 0
-
+	# time_find_rand = 0.0
+	# time_find_nearest = 0.0
+	# time_find_new = 0.0
+	# time_check_collision = 0.0
+	# time_check_target = 0.0
+	
 	while(1):
 
 		n_iter += 1
@@ -735,16 +741,26 @@ def RRT(s_initial, target, obstacles):
 		import time
 		time.sleep(0.05)
 
+		# t = timeit.timeit(lambda: (np.random.rand()*map_width, np.random.rand()*map_length, np.random.rand()*2*np.pi), number=3)/3
+		# time_find_rand = time_find_rand + t
 		s_rand = (np.random.rand()*map_width, np.random.rand()*map_length, np.random.rand()*2*np.pi) 
 
+		# t = timeit.timeit(lambda: nearest_neighbor(S, s_rand), number=3)/3
+		# time_find_nearest = time_find_nearest + t
 		s_nearest = nearest_neighbor(S, s_rand)
 
+		# t = timeit.timeit(lambda: drive_towards(s_nearest, s_rand), number=3)/3
+		# time_find_new = time_find_new + t
 		s_new, action = drive_towards(s_nearest, s_rand)
 
+		# t = timeit.timeit(lambda: check_collision(s_nearest, s_new, action, obstacles), number=3)/3
+		# time_check_collision = time_check_collision + t
 		if check_collision(s_nearest, s_new, action, obstacles):
 			display_edge( (s_nearest, s_new, action), color=(255,0,0))
 			continue
 		else: 
+			# t = timeit.timeit(lambda: check_target(s_nearest, s_new, action, target), number=3)/3
+			# time_check_target = time_check_target + t
 			found_target, new_action = check_target(s_nearest, s_new, action, target)
 
 			s_new = target if found_target else s_new
@@ -768,6 +784,14 @@ def RRT(s_initial, target, obstacles):
 	# print(s_initial)
 	play_frames(frames, target, obstacles)
 
+	# total_time = time_find_rand+time_find_nearest+time_find_new+time_check_collision+time_check_target
+	
+	# print("relative computational cost to find random state: ", round(time_find_rand/total_time,5))
+	# print("relative computational cost to find nearest state: ",  round(time_find_nearest/total_time,5))
+	# print("relative computational cost to find new state: ",  round(time_find_new/total_time,5))
+	# print("relative computational cost to check collision: ",  round(time_check_collision/total_time,5))
+	# print("relative computational cost to to check if target reached: ",  round(time_check_target/total_time,5))
+	
 	return
 
 
@@ -784,6 +808,9 @@ if __name__ == "__main__":
 	# 		(0.65*map_width,0.4*map_length)
 	# 		)
 	# 	]
+	# print()
+	# print("case 1 relative computational cost")
+	# RRT(start, end, obstacles)
 
 	# case 2
 	# c1 = [(0,150),(1000,150),(1000,0),(0,0)]
@@ -794,6 +821,10 @@ if __name__ == "__main__":
 	# obstacles = [c1,c2,c3,c4]
 	# start = (100,225,0)
 	# end = (900,225,0)
+	
+	# print()
+	# print("case 2 relative computational cost")
+	# RRT(start, end, obstacles)
 
 	# case 3
 	# c1 = [(200,150),(300,150),(300,0),(200,0)]
@@ -806,6 +837,9 @@ if __name__ == "__main__":
 
 	# end = (700,50,0)
 	# end = (350,50,0)
+	# print()
+	# print("case 3 relative computational cost")
+	# RRT(start, end, obstacles)
 
 	# case 4
 	c1 = [ (281.6759236105702, 246.8823493019557), (332.0566913037167, 332.4124898042745),  (462.1093706976528, 290.2332424332679),  (359.0045437907485, 140.2625851141338)]
@@ -814,6 +848,10 @@ if __name__ == "__main__":
 	start = (100, 250, 0)
 	end = (900, 100, 3*np.pi/2)
 	obstacles = [c1, c2, c3]
+	
+	# print()
+	# print("case 4 relative computational cost")
+	# RRT(start, end, obstacles)
 	
 	pygame.init()
 	screen = pygame.display.set_mode((round(map_width), round(map_length)))
